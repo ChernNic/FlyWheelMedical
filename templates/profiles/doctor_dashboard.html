@@ -1,0 +1,1212 @@
+{% extends 'include/base.html' %}
+{% load static %}
+{% block title_name %} Личный кабинет врача {% endblock %}
+{% block content %}
+    {% include 'include/navbar.html' %}
+    <div class="m-5">
+        <div class="row mb-3">
+            <!-- Личная информация -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="card-body">
+                            <h5 style="font-size: 25px; font-weight: bold; color: #20A7DF; display: inline-block;">
+                                Ваши данные: <a type="button" class="btn" data-bs-toggle="modal"
+                                                data-bs-target="#editModal" style="margin-left: 10px;">
+                                <i class="fas fa-pen"></i>
+                            </a></h5>
+
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Имя: {{ doctor.FirstName }}</li>
+                            <li class="list-group-item">Фамилия: {{ doctor.LastName }}</li>
+                            <li class="list-group-item">Отчество: {{ doctor.Surname }}</li>
+                            <li class="list-group-item">Квалификация: {{ doctor.Qualification }}</li>
+                            <li class="list-group-item fw-bold">Расписание:</li>
+                            <li class="list-group-item">Время работы: {{ schedule.StartTime }}
+                                - {{ schedule.EndTime }}</li>
+                            <li class="list-group-item">Перерыв: {{ schedule.BreakStartTime }}
+                                - {{ schedule.BreakEndTime }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <!-- Таблица с записями на приемы -->
+                <div class="mb-5">
+                    <div class="">
+                        <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">Записи на приемы</h3>
+                    </div>
+                    <div class="row">
+                        <div class="col input-group mb-3">
+                            <input type="text" class="form-control" id="searchInputAppointments" placeholder="Поиск...">
+                            <button class="btn btn-outline-secondary" type="button" id="searchButtonAppointments"><i
+                                    class="fa-solid fa-magnifying-glass"></i></button>
+                        </div>
+                        <div class="col text-end">
+                            <a id="downloadAppointmentsTable" href="" style="color: #20A7DF; font-size: 27px;"><i
+                                    class="fas fa-download"></i></a>
+                        </div>
+                    </div>
+                    <table class="table" id="appointmentsTable">
+                        <thead>
+                        <tr>
+                            <th scope="col"><a href="javascript:void(0)" class="sort-icon link-dark"><i
+                                    class="fa-solid fa-sort"></i></a>
+                                Дата
+                            </th>
+                            <th scope="col">
+                                <a href="javascript:void(0)" class="sort-service-icon"><i
+                                        class="fa-solid fa-sort link-dark"></i></a>
+                                Услуга
+                            </th>
+                            <th scope="col">
+                                <a href="javascript:void(0)" class="sort-client-icon"><i
+                                        class="fa-solid fa-sort link-dark"></i></a>
+                                ФИО клиента
+                            </th>
+                            <th scope="col">
+                                <a href="javascript:void(0)" class="sort-status-icon link-dark"><i
+                                        class="fa-solid fa-sort"></i></a>
+                                Статус
+                            </th>
+                            <th scope="col">Действия</th> <!-- Новый заголовок для колонки с кнопками действий -->
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for appointment_info in appointments_info %}
+                            <tr>
+                                <td class="align-middle">{{ appointment_info.dateF }}</td>
+                                <td class="align-middle">{{ appointment_info.service_name }}</td>
+                                <td class="align-middle"><a type="button" class="link-info" data-toggle="modal"
+                                                            data-target="#medicalHistoryModal{{ appointment_info.appointment_id }}">{{ appointment_info.client_full_name }}</a>
+                                </td>
+                                <td class="align-middle">
+                                    {% if appointment_info.status %}
+                                        <span class="badge bg-success">Завершен</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Запланирован</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <!-- Кнопка для редактирования -->
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#editAppointmentModall{{ appointment_info.appointment_id }}">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+
+                                    <!-- Кнопка для удаления -->
+                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteAppointmentModal{{ appointment_info.appointment_id }}">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Таблица с направлениями на анализы -->
+                <div class="mb-5">
+                    <div class="">
+                        <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">Направления на анализы</h3>
+                    </div>
+                    <div class="row">
+                        <div class="col input-group mb-3">
+                            <input type="text" class="form-control" id="searchInputDirections" placeholder="Поиск...">
+                            <button class="btn btn-outline-secondary" type="button" id="searchButtonDirections"><i
+                                    class="fa-solid fa-magnifying-glass"></i></button>
+                        </div>
+                        <div class="col text-end">
+                            <a type="button" data-bs-toggle="modal"
+                               data-bs-target="#createAnalysisDirectionModal"
+                               href="" style="color: #20A7DF; font-size: 27px;"><i
+                                    class="fas fa-add"></i></a>
+                            <a id="downloadAnalysisDirectionsTable" href="" style="color: #20A7DF; font-size: 27px;"><i
+                                    class="fas fa-download"></i></a>
+                        </div>
+                    </div>
+                    <table class="table" id="analysisDirectionsTable">
+                        <thead>
+                        <tr>
+                            <th scope="col">
+                                <a href="javascript:void(0)" class="sort-direction-date-icon link-dark"><i
+                                        class="fa-solid fa-sort link-dark"></i></a>
+                                Дата
+                            </th>
+                            <th scope="col">
+                                <a href="javascript:void(0)" class="sort-direction-client-icon link-dark"><i
+                                        class="fa-solid fa-sort link-dark"></i></a>
+                                ФИО клиента
+                            </th>
+                            <th scope="col">
+                                <a href="javascript:void(0)" class="sort-direction-service-icon link-dark"><i
+                                        class="fa-solid fa-sort link-dark"></i></a>
+                                Услуга
+                            </th>
+                            <th scope="col">Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for direction_info in analysis_directions_info %}
+                            <tr>
+                                <td>{{ direction_info.direction_date }}</td>
+                                <td>{{ direction_info.client_name }}</td>
+                                <td>{{ direction_info.service_name }}</td>
+                                <td>
+                                    <!-- Кнопка для редактирования -->
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#editAnalysisDirectionModal{{ direction_info.direction_id }}">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+
+                                    <!-- Кнопка для удаления -->
+                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteAnalysisDirectionModal{{ direction_info.direction_id }}">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Таблица с результатами анализов -->
+                <div class="mb-5">
+                    <div class="">
+                        <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">Результаты анализов</h3>
+                    </div>
+                    <div class="row">
+                        <div class="col input-group mb-3">
+                            <input type="text" class="form-control" id="searchInputResults" placeholder="Поиск...">
+                            <button class="btn btn-outline-secondary" type="button" id="searchButtonResults"><i
+                                    class="fa-solid fa-magnifying-glass"></i></button>
+                        </div>
+                        <div class="col text-end">
+                            <a type="button" data-bs-toggle="modal"
+                               data-bs-target="#createAnalysisResultModal"
+                               href="" style="color: #20A7DF; font-size: 27px;"><i
+                                    class="fas fa-add"></i></a>
+                            <a id="downloadAnalysisResultsTable" href="" style="color: #20A7DF; font-size: 27px;"><i
+                                    class="fas fa-download"></i></a>
+                        </div>
+                    </div>
+                    <table class="table" id="analysisResultsTable">
+                        <thead>
+                        <tr>
+                            <th scope="col"><a href="javascript:void(0)" class="sort-result-date-icon link-dark"><i
+                                    class="fa-solid fa-sort link-dark"></i></a> Дата результата
+                            </th>
+                            <th scope="col"><a href="javascript:void(0)" class="sort-result-client-icon link-dark"><i
+                                    class="fa-solid fa-sort link-dark"></i></a> ФИО клиента
+                            </th>
+                            <th scope="col"><a href="javascript:void(0)" class="sort-result-service-icon link-dark"><i
+                                    class="fa-solid fa-sort link-dark"></i></a> Услуга
+                            </th>
+                            <th scope="col"><a href="javascript:void(0)" class="sort-result-description-icon link-dark"><i
+                                    class="fa-solid fa-sort link-dark"></i></a> Описание результата
+                            </th>
+                            <th scope="col">Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for result_info in analysis_results_info %}
+                            <tr>
+                                <td>{{ result_info.result_date }}</td>
+                                <td>{{ result_info.client_name }}</td>
+                                <td>{{ result_info.service_name }}</td>
+                                <td>{{ result_info.result_description }}</td>
+                                <td>
+                                    <!-- Кнопка для редактирования -->
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#editAnalysisResultModal{{ result_info.result_id }}">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+
+                                    <!-- Кнопка для удаления -->
+                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteAnalysisResultModal{{ result_info.result_id }}">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования данных пользователя-->
+    <div class="modal fade" id="editModal" tabindex="-1"
+         aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Редактировать данные</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма редактирования данных -->
+                    <form method="post" action="{% url 'doctor_dashboard' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="editFirstName" class="form-label">Имя:</label>
+                            <input type="text" class="form-control" id="editFirstName" name="FirstName"
+                                   value="{{ doctor.FirstName }}" placeholder="Имя" pattern="[а-яА-Яa-zA-Z]{2,25}"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editLastName" class="form-label">Фамилия:</label>
+                            <input type="text" class="form-control" id="editLastName" name="LastName"
+                                   value="{{ doctor.LastName }}" placeholder="Фамилия"
+                                   pattern="[а-яА-Яa-zA-Z]{2,25}"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSurname" class="form-label">Отчество:</label>
+                            <input type="text" class="form-control" id="editSurname" name="Surname"
+                                   value="{{ doctor.Surname }}" placeholder="Отчество"
+                                   pattern="[а-яА-Яa-zA-Z]{0,25}"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editQualification" class="form-label">Квалификация:</label>
+                            <input type="text" class="form-control" id="editSurname" name="Qualification"
+                                   value="{{ doctor.Qualification }}" placeholder="Отчество"
+                                   pattern="[а-яА-Яa-zA-Z]{0,25}"
+                                   required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для подтверждения удаления записи -->
+    {% for appointment in appointments_info %}
+
+        <div class="modal fade" id="deleteAppointmentModal{{ appointment.appointment_id }}" tabindex="-1"
+             aria-labelledby="deleteAppointmentModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteAppointmentModalLabel">Подтвердить удаление записи</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Вы уверены, что хотите удалить эту запись?
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post" action="{% url 'doctor_delete_appointment' %}">
+                            {% csrf_token %}
+                            <input type="hidden" class="form-control" name="appointment_id" id="deleteAppointmentId"
+                                   value="{{ appointment.appointment_id }}">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-danger">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% endfor %}
+
+    <!-- Модальное окно для редактирования записи на прием -->
+    {% for appointment_info in appointments_info %}
+        <div class="modal fade" id="editAppointmentModall{{ appointment_info.appointment_id }}" tabindex="-1"
+             aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAppointmentModalLabel">Редактировать запись на прием</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Форма редактирования записи на прием -->
+                        <form method="post" action="{% url 'doctor_edit_appointment' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="appointmentDate" class="form-label">Дата и время приема:</label>
+                                <input type="datetime-local" class="form-control" id="appointmentDate" name="date"
+                                       value="{{ appointment_info.date }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="clientSelect" class="form-label">Выберите пациента:</label>
+                                <select class="form-select" id="clientSelect" name="client_id" required>
+                                    {% for client in clients %}
+                                        <option value="{{ client.ClientID }}"
+                                                {% if client == appointment_info.clientID %}
+                                                selected {% endif %}>{{ client.get_full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serviceSelect" class="form-label">Выберите услугу:</label>
+                                <select class="form-select" id="serviceSelect" name="service_id" required>
+                                    {% for service in services %}
+                                        <option value="{{ service.ServiceID }}"
+                                                {% if service == appointment_info.service_id %}
+                                                selected {% endif %}>{{ service.ServiceName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="statusCheckbox" class="form-label">Статус:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="statusCheckbox" name="status"
+                                            {% if appointment_info.status %} checked {% endif %}>
+                                    <label class="form-check-label" for="statusCheckbox">
+                                        Пройден
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="hidden" class="form-control" name="doctor_id" id="editAppointmentId"
+                                   value="{{ doctor.DoctorID }}">
+                            <input type="hidden" name="appointment_id" value="{{ appointment_info.appointment_id }}">
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+    <!-- Модальное окно для истории -->
+    {% for appointment_info in appointments_info %}
+        <div class="modal fade" id="medicalHistoryModal{{ appointment_info.appointment_id }}" tabindex="-1"
+             role="dialog" aria-labelledby="medicalHistoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="medicalHistoryModalLabel">История записей</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table" id="medicalHistoryModalTable{{ appointment_info.appointment_id }}">
+                            <thead>
+                            <tr>
+                                <th>ФИО клиента</th>
+                                <th>ФИО врача</th>
+                                <th>Услуга</th>
+                                <th>Дата</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for history in appointment_info.medical_history %}
+                                <tr>
+                                    <td>{{ history.ClientID.get_full_name }}</td>
+                                    <td>{{ history.AppointmentInformationID.AppointmentID.DoctorID.get_full_name }}</td>
+                                    <td>{{ history.AppointmentInformationID.ServiceID.ServiceName }}</td>
+                                    <td>{{ history.get_date}}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                        <a id="medicalHistoryModalTableBtn{{ appointment_info.appointment_id }}" href=""
+                           style="color: #20A7DF; font-size: 27px;"><i class="fas fa-download"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JavaScript код для скачивания таблицы медицинской истории -->
+        <script>
+            document.querySelector('#medicalHistoryModalTableBtn{{ appointment_info.appointment_id }}').addEventListener('click', function () {
+                downloadTableAsHtml('medicalHistoryModalTable{{ appointment_info.appointment_id }}', 'Медицинская_история_{{ appointment_info.client_full_name }}', "Медицинская история {{ appointment_info.client_full_name }}");
+            });
+        </script>
+    {% endfor %}
+
+    <!-- Модальное окно для подтверждения удаления направлений на прием -->
+    {% for direction_info in analysis_directions_info %}
+
+        <div class="modal fade" id="deleteAnalysisDirectionModal{{ direction_info.direction_id }}" tabindex="-1"
+             aria-labelledby="deleteAnalysisDirectionModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteAnalysisDirectionModalLabel">Подтвердить удаление
+                            напрваления</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Вы уверены, что хотите удалить эту запись?
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post" action="{% url 'doctor_delete_analysis_direction' %}">
+                            {% csrf_token %}
+                            <input type="hidden" class="form-control" name="direction_id" id="deleteAnalysisDirectionId"
+                                   value="{{ direction_info.direction_id }}">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-danger">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% endfor %}
+
+    <!-- Модальное окно для редактирования направлений на прием -->
+    {% for direction_info in analysis_directions_info %}
+        <div class="modal fade" id="editAnalysisDirectionModal{{ direction_info.direction_id }}" tabindex="-1"
+             aria-labelledby="editAnalysisDirectionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAnalysisDirectionModalLabel">Редактировать направление на
+                            анализ</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Форма редактирования направления на анализ -->
+                        <form method="post" action="{% url 'doctor_edit_analysis_direction' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="directionDate" class="form-label">Дата направления:</label>
+                                <input type="datetime-local" class="form-control" id="directionDate"
+                                       name="direction_date"
+                                       value="{{ direction_info.direction_date }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="clientSelect" class="form-label">Выберите пациента:</label>
+                                <select class="form-select" id="clientSelect" name="client_id" required>
+                                    {% for client in clients %}
+                                        <option value="{{ client.ClientID }}"
+                                                {% if client.get_full_name == direction_info.client_name %}
+                                                selected {% endif %}>{{ client.get_full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serviceSelect" class="form-label">Выберите услугу:</label>
+                                <select class="form-select" id="serviceSelect" name="service_id" required>
+                                    {% for service in services %}
+                                        <option value="{{ service.ServiceID }}"
+                                                {% if service.ServiceName == direction_info.service_name %}
+                                                selected {% endif %}>{{ service.ServiceName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+    <!-- Модальное окно для добваления направлений на прием -->
+    <div class="modal fade" id="createAnalysisDirectionModal" tabindex="-1"
+         aria-labelledby="editAnalysisDirectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addAnalysisDirectionModalLabel">Добавить направление на
+                        анализ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма добавления направления на анализ -->
+                    <form method="post" action="{% url 'doctor_add_analysis_direction' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="directionDate" class="form-label">Дата направления:</label>
+                            <input type="datetime-local" class="form-control" id="directionDate"
+                                   name="direction_date"
+                                   value="" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="clientSelect" class="form-label">Выберите пациента:</label>
+                            <select class="form-select" id="clientSelect" name="client_id" required>
+                                {% for client in clients %}
+                                    <option value="{{ client.ClientID }}">{{ client.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceSelect" class="form-label">Выберите услугу:</label>
+                            <select class="form-select" id="serviceSelect" name="service_id" required>
+                                {% for service in services %}
+                                    <option value="{{ service.ServiceID }}">{{ service.ServiceName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <input type="hidden" class="form-control" id="doctorID"
+                               name="doctor_id"
+                               value="{{ doctor.DoctorID }}" required>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования результатов анализа -->
+    {% for result_info in analysis_results_info %}
+        <div class="modal fade" id="editAnalysisResultModal{{ result_info.result_id }}" tabindex="-1"
+             aria-labelledby="editAnalysisResultModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAnalysisResultModalLabel">Редактировать результат анализа</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Форма редактирования результатов анализа -->
+                        <form method="post" action="{% url 'doctor_edit_analysis_result' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="resultDescription" class="form-label">Описание результата:</label>
+                                <input type="text" class="form-control" id="resultDescription" name="result_description"
+                                       value="{{ result_info.result_description }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="DirectionSelect" class="form-label">Выберите направление:</label>
+                                <select class="form-select" id="DirectionSelect" name="analysis_direction_id" required>
+                                    {% for direction in directions %}
+                                        <option value="{{ direction.AnalysisDirectionID }}"
+                                                {% if direction.AnalysisDirectionID == result_info.direction_id.AnalysisDirectionID %}
+                                                selected {% endif %}>{{ direction.ClientID.get_full_name }}
+                                            ({{ direction.ServiceID.ServiceName }})
+                                        </option>
+                                    {% endfor %}</select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="resultDate" class="form-label">Дата результата:</label>
+                                <input type="datetime-local" class="form-control" id="resultDate" name="result_date"
+                                       value="{{ result_info.result_date }}" required>
+                            </div>
+                            <!-- Hidden field to store the AnalysisResultID -->
+                            <input type="hidden" name="analysis_result_id" value="{{ result_info.result_id }}">
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+     <!-- Модальное окно для подтверждения удаления результатов анализа -->
+    {% for result_info in analysis_results_info %}
+            <div class="modal fade" id="deleteAnalysisResultModal{{ result_info.result_id }}" tabindex="-1"
+                 aria-labelledby="deleteAnalysisResultModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteAnalysisResultModalLabel">Подтвердить удаление
+                                результата анализа</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Вы уверены, что хотите удалить этот результат анализа?
+                        </div>
+                        <div class="modal-footer">
+                            <form method="post" action="{% url 'doctor_delete_analysis_result' %}">
+                                {% csrf_token %}
+                                <input type="hidden" class="form-control" name="result_id" value="{{ result_info.result_id }}">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <button type="submit" class="btn btn-danger">Удалить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    {% endfor %}
+
+    <!-- Модальное окно для редактирования результатов анализа -->
+    <div class="modal fade" id="createAnalysisResultModal" tabindex="-1"
+         aria-labelledby="createAnalysisResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editAnalysisResultModalLabel">Редактировать результат анализа</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма редактирования результатов анализа -->
+                    <form method="post" action="{% url 'doctor_add_analysis_result' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="resultDescription" class="form-label">Описание результата:</label>
+                            <input type="text" class="form-control" id="resultDescription" name="result_description"
+                                   value="" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="DirectionSelect" class="form-label">Выберите направление:</label>
+                            <select class="form-select" id="DirectionSelect" name="analysis_direction_id" required>
+                                {% for direction in directions %}
+                                    <option value="{{ direction.AnalysisDirectionID }}"
+                                            {% if direction.AnalysisDirectionID == result_info.direction_id.AnalysisDirectionID %}
+                                            selected {% endif %}>{{ direction.ClientID.get_full_name }}
+                                        ({{ direction.ServiceID.ServiceName }})
+                                    </option>
+                                {% endfor %}</select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="resultDate" class="form-label">Дата результата:</label>
+                            <input type="datetime-local" class="form-control" id="resultDate" name="result_date"
+                                   value="" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить результат</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function downloadTableAsHtml(tableId, fileName, tableTitle) {
+            // Получаем содержимое таблицы
+            var tableHtml = document.querySelector('#' + tableId).outerHTML;
+
+            // Создаем HTML-код для файла
+            var htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${fileName}</title>
+            <!-- Подключаем стили Bootstrap -->
+            <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+        </head>
+        <body>
+            <div class="container m-3">
+                <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">${tableTitle}</h3>
+                ${tableHtml}
+            </div>
+        </body>
+        </html>
+        `;
+
+            // Создаем объект Blob с содержимым HTML
+            var blob = new Blob([htmlContent], {type: 'text/html'});
+
+            // Создаем ссылку для скачивания файла
+            var a = document.createElement('a');
+            a.href = window.URL.createObjectURL(blob);
+            a.download = fileName + '.html';
+
+            // Эмулируем клик по ссылке для скачивания файла
+            a.click();
+        }
+
+        // Привязываем функции скачивания к событиям клика на ссылках скачивания
+        document.querySelector('#downloadAppointmentsTable').addEventListener('click', function () {
+            downloadTableAsHtml('appointmentsTable', 'Записи_на_приемы', "Записи на прием");
+        });
+
+        document.querySelector('#downloadAnalysisDirectionsTable').addEventListener('click', function () {
+            downloadTableAsHtml('analysisDirectionsTable', 'Направления_на_приемы', "Направления на прием");
+        });
+
+        document.querySelector('#downloadAnalysisResultsTable').addEventListener('click', function () {
+            downloadTableAsHtml('analysisResultsTable', 'Результаты_анализов', "Результаты анализов");
+        });
+    </script>
+
+    <script>
+        // Функция для выполнения поиска записей
+        function performSearchAppointments() {
+            // Получаем значение из поля ввода
+            var searchQuery = document.getElementById('searchInputAppointments').value.toLowerCase();
+
+            // Получаем все строки таблицы
+            var rows = document.getElementById('appointmentsTable').getElementsByTagName('tr');
+
+            // Проходимся по каждой строке таблицы, начиная с первой (i=1, так как нулевая строка - это заголовок таблицы)
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i]; // Текущая строка
+
+                var isVisible = false; // Флаг для отслеживания видимости строки
+
+                // Проходимся по каждой ячейке строки, начиная с первой (j=0, так как нулевая ячейка - это первая ячейка строки)
+                for (var j = 0; j < row.cells.length; j++) {
+                    var cell = row.cells[j]; // Текущая ячейка
+
+                    // Получаем текст из ячейки и приводим его к нижнему регистру
+                    var cellText = cell.textContent.toLowerCase();
+
+                    // Если текст в ячейке содержит поисковой запрос, то помечаем строку как видимую и выходим из цикла
+                    if (cellText.includes(searchQuery)) {
+                        isVisible = true;
+                        break;
+                    }
+                }
+
+                // Если хотя бы одна ячейка строки содержит поисковой запрос, то оставляем строку видимой, иначе скрываем ее
+                row.style.display = isVisible ? '' : 'none';
+            }
+        }
+
+        // Привязываем функцию поиска к кнопке
+        document.getElementById('searchButtonAppointments').addEventListener('click', performSearchAppointments);
+
+        // Привязываем функцию поиска к полю ввода, чтобы выполнить поиск при нажатии Enter
+        document.getElementById('searchInputAppointments').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                performSearchAppointments();
+            }
+        });
+
+        // Функция для выполнения поиска направления
+        function performSearchDirections() {
+            // Получаем значение из поля ввода
+            var searchQuery = document.getElementById('searchInputDirections').value.toLowerCase();
+
+            // Получаем все строки таблицы
+            var rows = document.getElementById('analysisDirectionsTable').getElementsByTagName('tr');
+
+            // Проходимся по каждой строке таблицы, начиная с первой (i=1, так как нулевая строка - это заголовок таблицы)
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i]; // Текущая строка
+
+                var isVisible = false; // Флаг для отслеживания видимости строки
+
+                // Проходимся по каждой ячейке строки, начиная с первой (j=0, так как нулевая ячейка - это первая ячейка строки)
+                for (var j = 0; j < row.cells.length; j++) {
+                    var cell = row.cells[j]; // Текущая ячейка
+
+                    // Получаем текст из ячейки и приводим его к нижнему регистру
+                    var cellText = cell.textContent.toLowerCase();
+
+                    // Если текст в ячейке содержит поисковой запрос, то помечаем строку как видимую и выходим из цикла
+                    if (cellText.includes(searchQuery)) {
+                        isVisible = true;
+                        break;
+                    }
+                }
+
+                // Если хотя бы одна ячейка строки содержит поисковой запрос, то оставляем строку видимой, иначе скрываем ее
+                row.style.display = isVisible ? '' : 'none';
+            }
+        }
+
+        // Привязываем функцию поиска к кнопке
+        document.getElementById('searchButtonDirections').addEventListener('click', performSearchDirections);
+
+        // Привязываем функцию поиска к полю ввода, чтобы выполнить поиск при нажатии Enter
+        document.getElementById('searchInputDirections').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                performSearchDirections();
+            }
+        });
+
+        // Функция для выполнения поиска направления
+        function performSearchDirections() {
+            // Получаем значение из поля ввода
+            var searchQuery = document.getElementById('searchInputDirections').value.toLowerCase();
+
+            // Получаем все строки таблицы
+            var rows = document.getElementById('analysisDirectionsTable').getElementsByTagName('tr');
+
+            // Проходимся по каждой строке таблицы, начиная с первой (i=1, так как нулевая строка - это заголовок таблицы)
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i]; // Текущая строка
+
+                var isVisible = false; // Флаг для отслеживания видимости строки
+
+                // Проходимся по каждой ячейке строки, начиная с первой (j=0, так как нулевая ячейка - это первая ячейка строки)
+                for (var j = 0; j < row.cells.length; j++) {
+                    var cell = row.cells[j]; // Текущая ячейка
+
+                    // Получаем текст из ячейки и приводим его к нижнему регистру
+                    var cellText = cell.textContent.toLowerCase();
+
+                    // Если текст в ячейке содержит поисковой запрос, то помечаем строку как видимую и выходим из цикла
+                    if (cellText.includes(searchQuery)) {
+                        isVisible = true;
+                        break;
+                    }
+                }
+
+                // Если хотя бы одна ячейка строки содержит поисковой запрос, то оставляем строку видимой, иначе скрываем ее
+                row.style.display = isVisible ? '' : 'none';
+            }
+        }
+
+        // Привязываем функцию поиска к кнопке
+        document.getElementById('searchButtonDirections').addEventListener('click', performSearchDirections);
+
+        // Привязываем функцию поиска к полю ввода, чтобы выполнить поиск при нажатии Enter
+        document.getElementById('searchInputDirections').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                performSearchDirections();
+            }
+        });
+
+        // Функция для выполнения поиска направления
+        function performSearchResults() {
+            // Получаем значение из поля ввода
+            var searchQuery = document.getElementById('searchInputDirections').value.toLowerCase();
+
+            // Получаем все строки таблицы
+            var rows = document.getElementById('analysisResultsTable').getElementsByTagName('tr');
+
+            // Проходимся по каждой строке таблицы, начиная с первой (i=1, так как нулевая строка - это заголовок таблицы)
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i]; // Текущая строка
+
+                var isVisible = false; // Флаг для отслеживания видимости строки
+
+                // Проходимся по каждой ячейке строки, начиная с первой (j=0, так как нулевая ячейка - это первая ячейка строки)
+                for (var j = 0; j < row.cells.length; j++) {
+                    var cell = row.cells[j]; // Текущая ячейка
+
+                    // Получаем текст из ячейки и приводим его к нижнему регистру
+                    var cellText = cell.textContent.toLowerCase();
+
+                    // Если текст в ячейке содержит поисковой запрос, то помечаем строку как видимую и выходим из цикла
+                    if (cellText.includes(searchQuery)) {
+                        isVisible = true;
+                        break;
+                    }
+                }
+
+                // Если хотя бы одна ячейка строки содержит поисковой запрос, то оставляем строку видимой, иначе скрываем ее
+                row.style.display = isVisible ? '' : 'none';
+            }
+        }
+
+        // Привязываем функцию поиска к кнопке
+        document.getElementById('searchButtonResults').addEventListener('click', performSearchResults);
+
+        // Привязываем функцию поиска к полю ввода, чтобы выполнить поиск при нажатии Enter
+        document.getElementById('searchInputResults').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                performSearchResults();
+            }
+        });
+    </script>
+
+    <script>
+        // Функция для сортировки таблицы по дате
+        function sortTableByDate() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("appointmentsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[0]; // Получаем ячейку с датой
+                    y = rows[i + 1].getElementsByTagName("TD")[0]; // Получаем следующую ячейку с датой
+                    if (new Date(x.innerHTML) > new Date(y.innerHTML)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Функция для сортировки таблицы по статусу
+        function sortTableByStatus() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("appointmentsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[3]; // Получаем ячейку со статусом
+                    y = rows[i + 1].getElementsByTagName("TD")[3]; // Получаем следующую ячейку со статусом
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Функция для сортировки таблицы по ФИО клиента
+        function sortTableByClientName() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("appointmentsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[2]; // Получаем ячейку с ФИО клиента
+                    y = rows[i + 1].getElementsByTagName("TD")[2]; // Получаем следующую ячейку с ФИО клиента
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Функция для сортировки таблицы по Услуге
+        function sortTableByServiceName() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("appointmentsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[1]; // Получаем ячейку с Услугой
+                    y = rows[i + 1].getElementsByTagName("TD")[1]; // Получаем следующую ячейку с Услугой
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Function to sort table by date
+        function sortTableByDirectionDate() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("analysisDirectionsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[0]; // Get the cell with direction date
+                    y = rows[i + 1].getElementsByTagName("TD")[0]; // Get the next cell with direction date
+                    if (new Date(x.innerHTML) > new Date(y.innerHTML)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Function to sort table by client name
+        function sortTableByDirectionClientName() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("analysisDirectionsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[1]; // Get the cell with client name
+                    y = rows[i + 1].getElementsByTagName("TD")[1]; // Get the next cell with client name
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Function to sort table by service name
+        function sortTableByDirectionServiceName() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("analysisDirectionsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[2]; // Get the cell with service name
+                    y = rows[i + 1].getElementsByTagName("TD")[2]; // Get the next cell with service name
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Function to sort table by result date
+        function sortTableByResultDate() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("analysisResultsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[0]; // Get the cell with result date
+                    y = rows[i + 1].getElementsByTagName("TD")[0]; // Get the next cell with result date
+                    if (new Date(x.innerHTML) > new Date(y.innerHTML)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Function to sort table by client name
+        function sortTableByResultClientName() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("analysisResultsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[1]; // Get the cell with client name
+                    y = rows[i + 1].getElementsByTagName("TD")[1]; // Get the next cell with client name
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Function to sort table by service name
+        function sortTableByResultServiceName() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("analysisResultsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[2]; // Get the cell with service name
+                    y = rows[i + 1].getElementsByTagName("TD")[2]; // Get the next cell with service name
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Function to sort table by result description
+        function sortTableByResultDescription() {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("analysisResultsTable");
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[3]; // Get the cell with result description
+                    y = rows[i + 1].getElementsByTagName("TD")[3]; // Get the next cell with result description
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+        // Bind sorting functions to click events on corresponding sort icons
+        document.querySelector('.sort-result-date-icon').addEventListener('click', function () {
+            sortTableByResultDate();
+        });
+
+        document.querySelector('.sort-result-client-icon').addEventListener('click', function () {
+            sortTableByResultClientName();
+        });
+
+        document.querySelector('.sort-result-service-icon').addEventListener('click', function () {
+            sortTableByResultServiceName();
+        });
+
+        document.querySelector('.sort-result-description-icon').addEventListener('click', function () {
+            sortTableByResultDescription();
+        });
+
+        // Привязываем функции сортировки к кликам по соответствующим значкам сортировки
+        document.querySelector('.sort-client-icon').addEventListener('click', function () {
+            sortTableByClientName();
+        });
+
+        document.querySelector('.sort-service-icon').addEventListener('click', function () {
+            sortTableByServiceName();
+        });
+
+        // Привязываем функцию сортировки к клику по значку сортировки
+        document.querySelector('.sort-status-icon').addEventListener('click', function () {
+            sortTableByStatus();
+        });
+
+        // Привязываем функцию сортировки к клику по значку сортировки
+        document.querySelector('.sort-icon').addEventListener('click', function () {
+            sortTableByDate();
+        });
+
+        // Bind sorting functions to click events on corresponding sort icons
+        document.querySelector('.sort-direction-date-icon').addEventListener('click', function () {
+            sortTableByDirectionDate();
+        });
+
+        document.querySelector('.sort-direction-client-icon').addEventListener('click', function () {
+            sortTableByDirectionClientName();
+        });
+
+        document.querySelector('.sort-direction-service-icon').addEventListener('click', function () {
+            sortTableByDirectionServiceName();
+        });
+    </script>
+
+
+{% endblock %}

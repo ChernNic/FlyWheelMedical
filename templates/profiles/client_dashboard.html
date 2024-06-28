@@ -1,0 +1,265 @@
+{% extends 'include/base.html' %}
+{% load static %}
+{% block title_name %} Личный кабинет {% endblock %}
+{% block content %}
+    {% include 'include/navbar.html' %}
+    <div class="m-5">
+        <div class="row mb-3">
+            <!-- Личная информация -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="card-body">
+                            <h5 style="font-size: 25px; font-weight: bold; color: #20A7DF; display: inline-block;">
+                                Ваши данные: <a type="button" class="btn" data-bs-toggle="modal"
+                                                data-bs-target="#editModal" style="margin-left: 10px;">
+                                <i class="fas fa-pen"></i>
+                            </a></h5>
+
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Имя: {{ client.FirstName }}</li>
+                            <li class="list-group-item">Фамилия: {{ client.LastName }}</li>
+                            <li class="list-group-item">Отчество: {{ client.Surname }}</li>
+                            <li class="list-group-item">Контактный номер: {{ client.ContactNumber }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Таблица с записями на приемы -->
+            <div class="col-md-8">
+                <div class="row mb-3">
+                    <div class="col">
+                        <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">Записи на приемы</h3>
+                    </div>
+                    <div class="col text-end">
+                        <a id="downloadAppointmentsTable" href="" style="color: #20A7DF; font-size: 27px;"><i
+                                class="fas fa-download"></i></a>
+                    </div>
+                </div>
+
+                <table class="table" id="appointmentsTable">
+                    <thead>
+                    <tr>
+                        <th scope="col">Дата</th>
+                        <th scope="col">Услуга</th>
+                        <th scope="col">ФИО врача</th>
+                        <th scope="col">Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for appointment_info in appointments_info %}
+                        <tr>
+                            <td>{{ appointment_info.date }}</td>
+                            <td>{{ appointment_info.service_name }}</td>
+                            <td>{{ appointment_info.doctor_full_name }}</td>
+                            <td>
+                                {% if appointment_info.status %}
+                                    <span class="badge bg-success">Завершен</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Запланирован</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="row mb-3 mt-5">
+                    <div class="col">
+                        <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">Мои анализы</h3>
+                    </div>
+                    <div class="col text-end">
+                        <a id="downloadAnalysisResultsTable" href="" style="color: #20A7DF; font-size: 27px;"><i
+                                class="fas fa-download"></i></a>
+                    </div>
+                </div>
+
+                <table class="table" id="analysisResultsTable">
+                    <thead>
+                    <tr>
+                        <th scope="col">Дата</th>
+                        <th scope="col">Услуга</th>
+                        <th scope="col">Описание результата</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for analysis_result in analysis_results %}
+                        <tr>
+                            <td>{{ analysis_result.ResultDate }}</td>
+                            <td>{{ analysis_result.DirectionID.ServiceID.ServiceName }}</td>
+                            <td>{{ analysis_result.ResultDescription }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="row mb-3 mt-5">
+                    <div class="col">
+                        <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">Мои направления</h3>
+                    </div>
+                    <div class="col text-end">
+                        <a id="downloadAnalysisDirectionsTable" href="" style="color: #20A7DF; font-size: 27px;"><i
+                                class="fas fa-download"></i></a>
+                    </div>
+                </div>
+
+                <table class="table" id="analysisDirectionsTable">
+                    <thead>
+                    <tr>
+                        <th scope="col">Дата</th>
+                        <th scope="col">Услуга</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for analysis_direction in analysis_directions %}
+                        <tr>
+                            <td>{{ analysis_direction.DirectionDate }}</td>
+                            <td>{{ analysis_direction.ServiceID.ServiceName }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Модальное окно для редактирования данных пользователя-->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Редактировать данные</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма редактирования данных -->
+                    <form method="post" action="{% url 'client_dashboard' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="editFirstName" class="form-label">Имя:</label>
+                            <input type="text" class="form-control" id="editFirstName" name="FirstName"
+                                   value="{{ client.FirstName }}" placeholder="Имя" pattern="[а-яА-Яa-zA-Z]{2,25}"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editLastName" class="form-label">Фамилия:</label>
+                            <input type="text" class="form-control" id="editLastName" name="LastName"
+                                   value="{{ client.LastName }}" placeholder="Фамилия" pattern="[а-яА-Яa-zA-Z]{2,25}"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSurname" class="form-label">Отчество:</label>
+                            <input type="text" class="form-control" id="editSurname" name="Surname"
+                                   value="{{ client.Surname }}" placeholder="Отчество" pattern="[а-яА-Яa-zA-Z]{0,25}"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editContactNumber" class="form-label">Контактный номер:</label>
+                            <input type="text" class="form-control" id="editContactNumber" name="ContactNumber"
+                                   value="{{ client.ContactNumber }}" placeholder="Номер" pattern="[0-9]{11}"
+                                   inputmode="numeric" maxlength="11" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления записи на прием -->
+    <div class="modal fade" id="addAppointmentModal" tabindex="-1" aria-labelledby="addAppointmentModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addAppointmentModalLabel">Добавить запись на прием</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма добавления записи на прием -->
+                    <form method="post" action="{% url 'add_appointment' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="appointmentDate" class="form-label">Дата и время приема:</label>
+                            <input type="datetime-local" class="form-control" id="appointmentDate"
+                                   name="appointment_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="doctorSelect" class="form-label">Выберите врача:</label>
+                            <select class="form-select" id="doctorSelect" name="doctor_id" required>
+                                {% for doctor in doctors %}
+                                    <option value="{{ doctor.DoctorID }}">{{ doctor.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceSelect" class="form-label">Выберите услугу:</label>
+                            <select class="form-select" id="serviceSelect" name="service_id" required>
+                                {% for service in services %}
+                                    <option value="{{ service.ServiceID }}">{{ service.ServiceName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function downloadTableAsHtml(tableId, fileName, tableTitle) {
+            // Получаем содержимое таблицы
+            var tableHtml = document.querySelector('#' + tableId).outerHTML;
+
+            // Создаем HTML-код для файла
+            var htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${fileName}</title>
+            <!-- Подключаем стили Bootstrap -->
+            <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+        </head>
+        <body>
+            <div class="container m-3">
+                <h3 style="font-size: 25px; font-weight: bold; color: #20A7DF;">${tableTitle}</h3>
+                ${tableHtml}
+            </div>
+        </body>
+        </html>
+        `;
+
+            // Создаем объект Blob с содержимым HTML
+            var blob = new Blob([htmlContent], {type: 'text/html'});
+
+            // Создаем ссылку для скачивания файла
+            var a = document.createElement('a');
+            a.href = window.URL.createObjectURL(blob);
+            a.download = fileName + '.html';
+
+            // Эмулируем клик по ссылке для скачивания файла
+            a.click();
+        }
+
+        // Привязываем функции скачивания к событиям клика на ссылках скачивания
+        document.querySelector('#downloadAppointmentsTable').addEventListener('click', function () {
+            downloadTableAsHtml('appointmentsTable', 'Записи_на_приемы', "Записи на прием");
+        });
+
+        document.querySelector('#downloadAnalysisDirectionsTable').addEventListener('click', function () {
+            downloadTableAsHtml('analysisResultsTable', 'Результаты_анализов', "Результаты анализов");
+        });
+
+        document.querySelector('#downloadAnalysisDirectionsTable').addEventListener('click', function () {
+            downloadTableAsHtml('analysisDirectionsTable', 'Направления_на_анализы','Напаравления на анализы');
+        });
+    </script>
+
+{% endblock %}
